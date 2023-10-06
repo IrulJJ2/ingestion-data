@@ -1,12 +1,13 @@
 import pandas as pd
 
 class Extraction():
-    def __init__(self, type: str, path: str) -> None:
-        self.type = type
-        self.path = path
+    def __init__(self) -> None:
+        self.path: str
+        self.url: str
         self.data = pd.DataFrame()
 
-    def static_file(self):
+    def static_file(self, path: str):
+        self.path = path
         self.extension = self.__ext_checker()
         if self.extension == "csv":
             self.__read_csv()
@@ -71,11 +72,38 @@ class Extraction():
         """
         self.data = pd.read_csv(self.path)
 
-    def request_api(self):
+    def request_api(self, url):
+        self.url = url
+
+        # self.__requests_chunked()
+        self.__read_json_chunked()
+
+    def __requests_chunked(self) -> None:
+        import requests
+        from gzip import decompress
+        from json import loads
+
+        # resp = loads(decompress(requests.get(self.url)))
+        # self.data = pd.DataFrame(resp)
         pass
 
+    def __read_json_chunked(self) -> None:
+        """Read github data from web with read_json to pandas DataFrame"""
+        header = {'User-Agent': 'pandas'}
+        chunk_size = 50000
+        with pd.read_json(self.url, lines=True, storage_options=header, chunksize=chunk_size, compression="gzip") as reader: 
+            for chunk in reader:
+                self.data = self.data.append(chunk, ignore_index=True)
+        print(self.data.head())
+
     def clean_data(self):
-        pass
+        import json
+
+        """Fix dtype issues"""
+        self.data["id"] = self.data["id"].astype("Int64")
+        self.data["payload"] = self.data["payload"].apply(lambda x: json.dumps(x)).astype("string")
+        self.data["type"] = self.data["type"].astype("string")
+        self.data["created_at"] = pd.to_datetime(self.data["created_at"])
 
     def cast_data(self):
         pass
@@ -88,20 +116,27 @@ class Load():
         pass
 
 def main():
-    file_path = "./dataset/yellow_tripdata_2020-07.csv"
-    extract = Extraction("static", file_path)
-    result = extract.static_file()
-    print(result.head())
-    
-    # result -> dataframe 
-    
+    extract = Extraction()
+
+    # read data from static file to dataframe
+    # file_path = "./dataset/yellow_tripdata_2020-07.csv"
+    # file_path = "./dataset/2017-10-02-1.json"
+    # file_path = "./dataset/yellow_tripdata_2023-01.parquet"
+    # result = extract.static_file(file_path)
+
+
+    # read data from github dataset to dataframe (2 ways: with read_json and requests)
+    year, month, day, hour = 2023, 10, 1, 1
+    url = f"http://data.gharchive.org/{year}-{month:02}-{day:02}-{hour}.json.gz"
+    print(">>>> url ", url)
+    extract.request_api(url)
+
     # load = Load()
     # load.to_postgres()
 
 
 if __name__ == "__main__":
     main()
-
 
 # Loading data into a data frame 
 # Investigating data in a data frame 
@@ -118,4 +153,4 @@ if __name__ == "__main__":
 
 # Check data in data warehouse with DBeaver
 
-# [TASK] Ingest data github to PostgreSQL
+# [TASK] Ingest data new york taxi to PostgreSQL

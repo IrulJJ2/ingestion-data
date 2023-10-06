@@ -101,15 +101,17 @@ wget -P dataset/ https://data.gharchive.org/2017-10-02-1.json.gz
 gzip -d dataset/2017-10-02-1.json.gz
 ```
 
-Read data
+- Open [ingestion file](./ingestion_data/ingest.py)
 
-csv
+### Read csv data
 
-json
+### Read json data
 
-parquet
+### Read parquet data
 
-## 6. Read data from Request API  
+- Run `python ingestion_data/ingest.py`
+
+## 6. Read data from API Request
 
 ## 7. Investigating data in dataframe
 
