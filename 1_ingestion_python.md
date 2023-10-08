@@ -63,6 +63,9 @@ pip install -r requirements.txt
 ```
 
 ## 3. Run postgresql service with docker-compose
+
+https://geshan.com.np/blog/2021/12/docker-postgres/
+
 ```
 docker-compose -f ingestion_data/docker-compose.yml up postgresql -d
 ```
@@ -116,6 +119,8 @@ gzip -d dataset/2017-10-02-1.json.gz
 ## 7. Investigating data in dataframe
 
 ## 8. Casting data based on appropriate data types
+
+https://pbpython.com/pandas_dtypes.html
 
 Timestamp
 Int
