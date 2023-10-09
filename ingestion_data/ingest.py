@@ -19,6 +19,7 @@ class Extraction():
             pass
         
         self.display_data()
+        self.cast_data()
 
         return self.data
     
@@ -123,9 +124,21 @@ class Extraction():
         # from display_data and investigate_schema, we will cast the appropriate data type to each column
         import json
 
+        # how to store json: https://www.freecodecamp.org/news/postgresql-and-json-use-json-data-in-postgresql
+
         self.data["id"] = self.data["id"].astype("Int64")
         self.data["type"] = self.data["type"].astype("string")
-        self.data["payload"] = self.data["payload"].apply(lambda x: json.dumps(x)).astype("string")
+
+        self.data["actor"] = self.data["actor"].apply(lambda x: json.dumps(x))
+        self.data["repo"] = self.data["repo"].apply(lambda x: json.dumps(x))
+        self.data["payload"] = self.data["payload"].apply(lambda x: json.dumps(x))
+        self.data["org"] = self.data["org"].apply(lambda x: json.dumps(x))
+
+        # self.data["actor"] = self.data["actor"].apply(json.dumps)
+        # self.data["repo"] = self.data["repo"].apply(json.dumps)
+        # self.data["payload"] = self.data["payload"].apply(json.dumps)
+        # self.data["org"] = self.data["org"].apply(json.dumps)
+
         self.data["created_at"] = pd.to_datetime(self.data["created_at"])
 
     
@@ -151,36 +164,50 @@ class Load():
         self.connection = psycopg2.connect(conn_string)
 
 
-    def to_postgres(self, data):
+    def to_postgres(self, data: pd.DataFrame):
         # self.__create_connection()
 
         import psycopg2 
-        from sqlalchemy import create_engine 
+        from sqlalchemy import create_engine, dialects
+        from sqlalchemy.types import BigInteger, String, JSON, DateTime, Boolean
+        from sqlalchemy.exc import SQLAlchemyError
 
         user = "postgres"
         password = "admin"
         host = "localhost"
         database = "mydb"
-        conn_string = f"postgresql://{user}:{password}@{host}/{database}"
+        port = 5432
+        conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
-        db = create_engine(conn_string) 
-        engine = db.connect()
-        # self.engine = db.connect()
+        engine = create_engine(conn_string) 
 
-        self.df = data.iloc[:10]
+        try:
+            df_schema = {
+                "id": BigInteger,
+                "type": String(100),
+                "actor": JSON,
+                "repo": JSON,
+                "payload": JSON,
+                "public": Boolean,
+                "created_at": DateTime,
+                "org": JSON
+            }
 
-        self.df.to_sql("github_data", con=engine, if_exists="replace", index=False, index_label=None, chunksize=5000, dtype=None, method="multi")
+            # jsonb cheatcheet -> https://medium.com/hackernoon/how-to-query-jsonb-beginner-sheet-cheat-4da3aa5082a3
 
-        connection = psycopg2.connect(conn_string)
+            data.to_sql(name="github_data_x", con=engine, if_exists="replace", index=False, schema="public", dtype=df_schema, method=None, chunksize=5000)
+        except SQLAlchemyError as err:
+            print("error", err.__cause__)
 
-        connection.autocommit = True
-        connection.close()
-
+        # connection = psycopg2.connect(conn_string)
+        # connection.autocommit = True
+        # connection.commit()
         # cursor = connection.cursor() 
-        # sql1 = '''select * from github_data;'''
-        # cursor.execute(sql1) 
+        # sql1 = "select * from github_data;"
+        # cursor.execute(sql1)
         # for i in cursor.fetchall(): 
         #     print(i)
+        # connection.close()
 
 
 def main():
