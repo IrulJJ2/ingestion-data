@@ -63,12 +63,7 @@ class Extraction():
         problem: DtypeWarning: Columns (6) have mixed types.Specify dtype option on import or set low_memory=False.
         to solve:
 
-        dtype = {
-            'first_name': str,
-            'last_name': str,
-            'date': str,
-            'salary': str
-        }
+        
 
         df = pd.read_csv(
             'employees.csv',
@@ -79,22 +74,20 @@ class Extraction():
         )
 
         """
-        self.data = pd.read_csv(self.path)
+
+        dtype = {
+            'first_name': str,
+            'last_name': str,
+            'date': str,
+            'salary': str
+        }
+
+        self.data = pd.read_csv(self.path, dtype=dtype)
 
     def request_api(self, url):
         self.url = url
 
-        # self.__requests_chunked()
         self.__read_json_chunked()
-
-    def __requests_chunked(self) -> None:
-        import requests
-        from gzip import decompress
-        from json import loads
-
-        # resp = loads(decompress(requests.get(self.url)))
-        # self.data = pd.DataFrame(resp)
-        pass
 
     def __read_json_chunked(self) -> None:
         """Read github data from web with read_json to pandas DataFrame"""
@@ -128,17 +121,6 @@ class Extraction():
 
         self.data["id"] = self.data["id"].astype("Int64")
         self.data["type"] = self.data["type"].astype("string")
-
-        self.data["actor"] = self.data["actor"].apply(lambda x: json.dumps(x))
-        self.data["repo"] = self.data["repo"].apply(lambda x: json.dumps(x))
-        self.data["payload"] = self.data["payload"].apply(lambda x: json.dumps(x))
-        self.data["org"] = self.data["org"].apply(lambda x: json.dumps(x))
-
-        # self.data["actor"] = self.data["actor"].apply(json.dumps)
-        # self.data["repo"] = self.data["repo"].apply(json.dumps)
-        # self.data["payload"] = self.data["payload"].apply(json.dumps)
-        # self.data["org"] = self.data["org"].apply(json.dumps)
-
         self.data["created_at"] = pd.to_datetime(self.data["created_at"])
 
     
@@ -150,27 +132,7 @@ class Load():
         self.connection = None
     
     def __create_connection(self):
-        import psycopg2 
         from sqlalchemy import create_engine 
-
-        user = "postgres"
-        password = "admin"
-        host = "localhost"
-        database = "mydb"
-        conn_string = f"postgresql://{user}:{password}@{host}/{database}"
-
-        db = create_engine(conn_string) 
-        self.engine = db.connect()
-        self.connection = psycopg2.connect(conn_string)
-
-
-    def to_postgres(self, data: pd.DataFrame):
-        # self.__create_connection()
-
-        import psycopg2 
-        from sqlalchemy import create_engine, dialects
-        from sqlalchemy.types import BigInteger, String, JSON, DateTime, Boolean
-        from sqlalchemy.exc import SQLAlchemyError
 
         user = "postgres"
         password = "admin"
@@ -179,7 +141,13 @@ class Load():
         port = 5432
         conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
-        engine = create_engine(conn_string) 
+        self.engine = create_engine(conn_string) 
+
+    def to_postgres(self, data: pd.DataFrame):
+        from sqlalchemy.types import BigInteger, String, JSON, DateTime, Boolean
+        from sqlalchemy.exc import SQLAlchemyError
+
+        self.__create_connection()
 
         try:
             df_schema = {
@@ -195,20 +163,9 @@ class Load():
 
             # jsonb cheatcheet -> https://medium.com/hackernoon/how-to-query-jsonb-beginner-sheet-cheat-4da3aa5082a3
 
-            data.to_sql(name="github_data_x", con=engine, if_exists="replace", index=False, schema="public", dtype=df_schema, method=None, chunksize=5000)
+            data.to_sql(name="github_data", con=self.engine, if_exists="replace", index=False, schema="public", dtype=df_schema, method=None, chunksize=5000)
         except SQLAlchemyError as err:
             print("error", err.__cause__)
-
-        # connection = psycopg2.connect(conn_string)
-        # connection.autocommit = True
-        # connection.commit()
-        # cursor = connection.cursor() 
-        # sql1 = "select * from github_data;"
-        # cursor.execute(sql1)
-        # for i in cursor.fetchall(): 
-        #     print(i)
-        # connection.close()
-
 
 def main():
     extract = Extraction()
@@ -255,13 +212,12 @@ there are 5 ways to load data to a dataframe:
 
 # Cleaning data, handle missing value, deal with NaN value 
 
-# TODO: sunday 
-
 # load data to a data warehouse (postgres) 
 
 # Check data in data warehouse with DBeaver
 
 # [TASK] Ingest data new york taxi to PostgreSQL
 
+# TODO: sunday 
 
 # working on ppt for week 1
