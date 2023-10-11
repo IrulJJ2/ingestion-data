@@ -5,6 +5,6 @@ print("Dataframe created from array")
 print(arr_data)
 print("---------------------")
 
-s = pd.DataFrame(arr_data)
+df = pd.DataFrame(arr_data)
 print("The DataFrame ")
-print(s)
+print(df)
