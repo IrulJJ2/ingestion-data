@@ -189,16 +189,16 @@ The `read_json` function can read a `json` file from a local file or a URL and c
 ```
 
     def __read_json_chunked(self) -> None:
-        """Read github data from web with read_json to pandas DataFrame"""
+        storage_options = {'User-Agent': None}
         chunk_size = 50000
-        with pd.read_json(self.url, lines=True, chunksize=chunk_size, compression="gzip") as reader: 
+        with pd.read_json(self.url, lines=True, storage_options=storage_options, chunksize=chunk_size, compression="gzip") as reader: 
             for chunk in reader:
-                self.data = self.data.append(chunk, ignore_index=True)
+                self.data = pd.concat([self.data, chunk], ignore_index=True)
         print(self.data.head())
 
 ```
 
-The `read_json` function 
+If the `json` data are quite large, we can utilize `chunksize` parameter to partially read the data.
 
 ### Indexing and Selecting data in a DataFrame
 
