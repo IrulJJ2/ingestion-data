@@ -193,8 +193,8 @@ The `read_json` function can read a `json` file from a local file or a URL and c
         chunk_size = 50000
         with pd.read_json(self.url, lines=True, storage_options=storage_options, chunksize=chunk_size, compression="gzip") as reader: 
             for chunk in reader:
-                self.data = pd.concat([self.data, chunk], ignore_index=True)
-        print(self.data.head())
+                self.dataframe = pd.concat([self.dataframe, chunk], ignore_index=True)
+        print(self.dataframe.head())
 
 ```
 
@@ -202,17 +202,70 @@ If the `json` data are quite large, we can utilize `chunksize` parameter to part
 
 ### Indexing and Selecting data in a DataFrame
 
+Indexing means selecting particular rows and columns from a DataFrame. There are several ways to do indexing with Pandas, some indexing methods are: 
+
+#### DataFrame[]
+
+this function also known as indexing operator
+
+#### DataFrame.loc[]
+
+this function is used for labels
+
+- selecting a single column
+- selecting multiple columns
+
+#### DataFrame.iloc[] 
+
+this function is used for positions or integer based
+
+- selecting a single row
+- selecting multiple rows
+- selecting two rows and three columns
+
+#### DataFrame.ix[] 
+
+this function is used for both label and integer based
+
+- selecting a single row
+- selecting multiple rows
+- selecting two rows and three columns
+
+
 https://www.geeksforgeeks.org/indexing-and-selecting-data-with-pandas/ 
 
 ### Simple Ingestion Data to Postgresql
 
 #### Identify data
 
-#### Extract 
+#### Extract data 
 
-`.csv`, `.json`, `.parquet`
+To extract `csv` and `json` data has already explained above.
+
+Here we are going to extract data from a `parquet` file. 
+To extract `parquet` data: 
+
+```
+    self.dataframe = pd.read_parquet(self.path, engine="pyarrow")
+```
 
 #### Investigate data in a DataFrame
+
+```
+    def investigate_schema(self):
+        # looking at DataFrame schema 
+        print("df schema ", self.dataframe.info())
+
+        # checking is there any NaN value from `org` column
+        org_nan_value = self.dataframe["org"].isnull().sum()
+        print("org_nan_value ", org_nan_value)
+
+        # checking is there any non-string value from from `type` column
+        type_nan_value = self.dataframe["type"].isnull().sum()
+        print("type_nan_value ", type_nan_value)
+
+```
+
 
 #### Casting data based on appropriate data types
 
@@ -225,16 +278,72 @@ Boolean
 string/varchar
 json object
 
-#### Casting data based on appropriate data types
+
+
+```
+    def cast_data(self):
+        self.dataframe["id"] = self.dataframe["id"].astype("Int64")
+        self.dataframe["type"] = self.dataframe["type"].astype("string")
+        self.dataframe["created_at"] = pd.to_datetime(self.dataframe["created_at"])
+```
 
 #### Cleaning data, handle missing value, deal with NaN value 
 
 #### Load DataFrame to Postgresql
 
+```
+    def __create_connection(self):
+        from sqlalchemy import create_engine 
+
+        user = "postgres"
+        password = "admin"
+        host = "localhost"
+        database = "mydb"
+        port = 5432
+        conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+        self.engine = create_engine(conn_string) 
+
+    def to_postgres(self, db_name: str, data: pd.DataFrame):
+        from sqlalchemy.types import BigInteger, String, JSON, DateTime, Boolean
+        from sqlalchemy.exc import SQLAlchemyError
+
+        self.db_name = db_name
+        self.__create_connection()
+
+        try:
+            # TODO: manage schema for each dataset
+            df_schema = {
+                "id": BigInteger,
+                "type": String(100),
+                "actor": JSON,
+                "repo": JSON,
+                "payload": JSON,
+                "public": Boolean,
+                "created_at": DateTime,
+                "org": JSON
+            }
+
+            data.to_sql(name=self.db_name, con=self.engine, if_exists="replace", index=False, schema="public", dtype=df_schema, method=None, chunksize=5000)
+        except SQLAlchemyError as err:
+            print("error >> ", err.__cause__)
+
+```
+
 #### Check data in Postgresql with DBeaver
+
+- Open DBeaver
+- Refresh connection to your local postgresql
+- Open new script to write SQL syntax
+
+```
+
+select count(1) from github_data
+
+select actor, actor->>'id' as actor_id from github_data limit 100
+
+```
 
 #### Try it yourself
 
 1. Ingest and set an appropriate data type for [Yellow Trip dataset](./dataset/yellow_tripdata_2020-07.csv) to PostgreSQL. Then count how many rows are ingested.
-
-2. 

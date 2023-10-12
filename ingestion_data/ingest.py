@@ -4,7 +4,7 @@ class Extraction():
     def __init__(self) -> None:
         self.path: str
         self.url: str
-        self.data = pd.DataFrame()
+        self.dataframe = pd.DataFrame()
 
     def local_file(self, path: str):
         self.path = path
@@ -22,18 +22,18 @@ class Extraction():
         self.cast_data()
         self.investigate_schema()
 
-        return self.data
+        return self.dataframe
     
     def display_data(self) -> None:
         # pandas truncates information
         pd.set_option('display.max_columns', None)
-        print(self.data.head(10))
+        print(self.dataframe.head(10))
 
     def __ext_checker(self) -> str:
         return self.path.split(".")[2]
     
     def __read_json(self):
-        self.data = pd.read_json(self.path, lines=True)
+        self.dataframe = pd.read_json(self.path, lines=True)
 
         """
         lines = True 
@@ -43,7 +43,7 @@ class Extraction():
         """
 
     def __read_parquet(self):
-        self.data = pd.read_parquet(self.path, engine="pyarrow")
+        self.dataframe = pd.read_parquet(self.path, engine="pyarrow")
 
         """
         Parquet library to use. If 'auto', then the option io.parquet.engine is used. 
@@ -73,14 +73,14 @@ class Extraction():
             'salary': str
         }
 
-        self.data = pd.read_csv(self.path, dtype=dtype)
+        self.dataframe = pd.read_csv(self.path, dtype=dtype)
 
     def request_api(self, url) -> pd.DataFrame:
         self.url = url
         self.__read_json_chunked()
         self.investigate_schema()
         self.cast_data()
-        return self.data
+        return self.dataframe
 
     def __read_json_chunked(self) -> None:
         """Read github data from web with read_json to pandas DataFrame"""
@@ -99,26 +99,25 @@ class Extraction():
         chunk_size = 50000
         with pd.read_json(self.url, lines=True, storage_options=storage_options, chunksize=chunk_size, compression="gzip") as reader: 
             for chunk in reader:
-                self.data = pd.concat([self.data, chunk], ignore_index=True)
-        print(self.data.head())
+                self.dataframe = pd.concat([self.dataframe, chunk], ignore_index=True)
+        print(self.dataframe.head())
 
     def investigate_schema(self):
-        print("INVESTIGATE SCHEMA ", self.data.info())
+        # looking at DataFrame schema 
+        print("df schema ", self.dataframe.info())
 
-        # https://datatofish.com/data-type-pandas-dataframe/
-
-        # checking is there any NaN value from each object-type column
-        org_nan_value = self.data["org"].isnull().sum()
+        # checking is there any NaN value from `org` column
+        org_nan_value = self.dataframe["org"].isnull().sum()
         print("org_nan_value ", org_nan_value)
 
-        # checking is there any non-string value from from each object-type column
-        type_nan_value = self.data["type"].isnull().sum()
+        # checking is there any non-string value from from `type` column
+        type_nan_value = self.dataframe["type"].isnull().sum()
         print("type_nan_value ", type_nan_value)
 
     def cast_data(self):
-        self.data["id"] = self.data["id"].astype("Int64")
-        self.data["type"] = self.data["type"].astype("string")
-        self.data["created_at"] = pd.to_datetime(self.data["created_at"])
+        self.dataframe["id"] = self.dataframe["id"].astype("Int64")
+        self.dataframe["type"] = self.dataframe["type"].astype("string")
+        self.dataframe["created_at"] = pd.to_datetime(self.dataframe["created_at"])
     
 class Load():
     # https://www.geeksforgeeks.org/how-to-insert-a-pandas-dataframe-to-an-existing-postgresql-table/
