@@ -6,7 +6,7 @@ class Extraction():
         self.url: str
         self.data = pd.DataFrame()
 
-    def static_file(self, path: str):
+    def local_file(self, path: str):
         self.path = path
         self.extension = self.__ext_checker()
         if self.extension == "csv":
@@ -84,18 +84,20 @@ class Extraction():
 
         self.data = pd.read_csv(self.path, dtype=dtype)
 
-    def request_api(self, url):
+    def request_api(self, url) -> pd.DataFrame:
         self.url = url
-
         self.__read_json_chunked()
+        self.investigate_schema()
+        return self.data
 
     def __read_json_chunked(self) -> None:
         """Read github data from web with read_json to pandas DataFrame"""
-        header = {'User-Agent': 'pandas'}
+        storage_options = {'User-Agent': 'pandas'}
         chunk_size = 50000
-        with pd.read_json(self.url, lines=True, storage_options=header, chunksize=chunk_size, compression="gzip") as reader: 
+        with pd.read_json(self.url, lines=True, storage_options=storage_options, chunksize=chunk_size, compression="gzip") as reader: 
             for chunk in reader:
-                self.data = self.data.append(chunk, ignore_index=True)
+                # self.data = self.data.append(chunk, ignore_index=True)
+                self.data = pd.concat([self.data, chunk], ignore_index=True)
         print(self.data.head())
 
     def investigate_schema(self):
@@ -128,6 +130,7 @@ class Load():
     # https://www.geeksforgeeks.org/how-to-insert-a-pandas-dataframe-to-an-existing-postgresql-table/
     def __init__(self) -> None:
         self.df = pd.DataFrame
+        self.db_name = ""
         self.engine = None
         self.connection = None
     
@@ -143,13 +146,15 @@ class Load():
 
         self.engine = create_engine(conn_string) 
 
-    def to_postgres(self, data: pd.DataFrame):
+    def to_postgres(self, db_name: str, data: pd.DataFrame):
         from sqlalchemy.types import BigInteger, String, JSON, DateTime, Boolean
         from sqlalchemy.exc import SQLAlchemyError
 
+        self.db_name = db_name
         self.__create_connection()
 
         try:
+            # TODO: manage schema for each dataset
             df_schema = {
                 "id": BigInteger,
                 "type": String(100),
@@ -161,31 +166,34 @@ class Load():
                 "org": JSON
             }
 
+            # df_schema = None
+
             # jsonb cheatcheet -> https://medium.com/hackernoon/how-to-query-jsonb-beginner-sheet-cheat-4da3aa5082a3
 
-            data.to_sql(name="github_data", con=self.engine, if_exists="replace", index=False, schema="public", dtype=df_schema, method=None, chunksize=5000)
+            data.to_sql(name=self.db_name, con=self.engine, if_exists="replace", index=False, schema="public", dtype=df_schema, method=None, chunksize=5000)
         except SQLAlchemyError as err:
-            print("error", err.__cause__)
+            print("error >> ", err.__cause__)
 
 def main():
     extract = Extraction()
 
-    # read data from static file to dataframe
+    # read data from local file to dataframe
     # file_path = "./dataset/yellow_tripdata_2020-07.csv"
-    file_path = "./dataset/2017-10-02-1.json"
+    # file_path = "./dataset/2017-10-02-1.json"
     # file_path = "./dataset/yellow_tripdata_2023-01.parquet"
-    df_result = extract.static_file(file_path)
-    extract.investigate_schema()
+    # df_result = extract.local_file(file_path)
+    # extract.investigate_schema()
 
 
-    # read data from github dataset to dataframe (2 ways: with read_json and requests)
-    # year, month, day, hour = 2023, 10, 1, 1
-    # url = f"http://data.gharchive.org/{year}-{month:02}-{day:02}-{hour}.json.gz"
-    # print(">>>> url ", url)
-    # extract.request_api(url)
+    # read data from github dataset to dataframe
+    year, month, day, hour = 2023, 10, 1, 1
+    url = f"http://data.gharchive.org/{year}-{month:02}-{day:02}-{hour}.json.gz"
+    print(">>>> url ", url)
+    df_result = extract.request_api(url)
 
     load = Load()
-    load.to_postgres(df_result)
+    db_name = "json_data_concat"
+    load.to_postgres(db_name, df_result)
 
 
 if __name__ == "__main__":
@@ -198,7 +206,7 @@ there are 5 ways to load data to a dataframe:
 - from dict
 - from lists
 - from series 
-- from file (static, web), example: csv/json/parquet data
+- from file (local, web), example: csv/json/parquet data
 
 """
 

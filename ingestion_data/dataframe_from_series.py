@@ -18,4 +18,5 @@ s = {
 }
 df = pd.DataFrame(s)
 print("dataframe created from dict of series with index")
-print(df.loc["index1"])
+print(df)
+# print(df.loc["index1"])

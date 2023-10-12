@@ -10,40 +10,41 @@ Outline:
 - check global installed python version 
 
 ```
-python --version
+    python --version
 ```
 
 - Install virtualenv
 
 ```
-pip install virtualenv
+    pip install virtualenv
 ```
 
 - install python3.10 virtual environment locally
 
 ```
-virtualenv -p python3.10 env
+    virtualenv -p python3.10 env
 ```
 
 - activate virtual environment and check python version
 
 ```
-source ./env/bin/activate
-python --version
+    source ./env/bin/activate
+    python --version
 ```
 
 - deactivate your virtual environment
 
 ```
-deactivate
+    deactivate
 ```
 
 ## 2. Install Python libraries 
 
 - Activate virtualenv
 - We have a large number of libraries need to be installed, we can install all the packages at once by using the requirements.txt file. The syntax would be:
+
 ```
-pip install -r requirements.txt
+    pip install -r requirements.txt
 ```
 
 ## 3. Run postgresql service with docker-compose
@@ -55,7 +56,7 @@ To run Postgres with docker-compose we will create a [docker-compose-pg-only.yml
 To start the containers, run this command: 
 
 ```
-docker-compose -f ingestion_data/docker-compose-pg-only.yml up postgresql
+    docker-compose -f ingestion_data/docker-compose-pg-only.yml up postgresql
 ```
 
 ## 4. Manage postgresql with Dbeaver
@@ -74,15 +75,21 @@ A DataFrame is a 2-dimensional data structure with columns of potentially differ
 
 ### Create a DataFrame
 
-- from [Array](./ingestion_data/dataframe_from_arrays.py)
+- Read Data from an Array ([code](./ingestion_data/dataframe_from_arrays.py))
 
-- from [Dictionary](./ingestion_data/dataframe_from_dict.py)
+```
+
+    arr_data = [ [10, 100, 1000], [40, 400, 4000]]
+    df = pd.DataFrame(arr_data)
+
+```
+
+- Read Data from a Dictionary ([code](./ingestion_data/dataframe_from_dict.py))
 
 We can specify how your data is laid out with `orient`. `orient` is short for orientation. By default , `orient` value is `columns`, means that the keys of your dictionary to be the DataFrame column names. 
 
 ```
     dict_data = {"a": [10, 20, 30, 40], "b": [50, 60, 70, 80]}
-
     df_by_columns = pd.DataFrame.from_dict(dict_data, orient="columns")
     print("dataframe created from from_dict")
     print(df_by_columns)
@@ -97,48 +104,101 @@ The output is:
 When `orient` value is `index`, the keys of your dictionary should be the index values. We need to be explicit about column names.
 
 ```
-    dict_data = {"a": [10, 20, 30, 40], "b": [50, 60, 70, 80]}
 
+    dict_data = {"a": [10, 20, 30, 40], "b": [50, 60, 70, 80]}
     cols = ['number_1', 'number_2', 'number_3', 'number_4']
     df_by_index = pd.DataFrame.from_dict(dict_data, orient="index", columns=cols)
     print("dataframe created from from_dict and set the orient")
     print(df_by_index)
+
 ```
 
 The output is: 
+
 ![column-orient](./img/ingestion__df-dict-orient-column.png)
 
 
-- from Pandas `Series`
+- Read Data from Pandas `Series` ([code](./ingestion_data/dataframe_from_series.py))
 
 Pandas Series is a one-dimensional labeled array capable of holding data of any type (integer, string, float, python objects, etc.).
 
-By default, `Series` is assigned an integer index, 
+By default, `Series` is assigned an integer index.
 
 ```
-s = {
-    "a": pd.Series(range(1, 3)), 
-    "b": pd.Series(range(2, 4))
-}
 
-df = pd.DataFrame(s)
+    s = {
+        "a": pd.Series(range(1, 3)), 
+        "b": pd.Series(range(2, 4))
+    }
+
+    df = pd.DataFrame(s)
+
 ```
 
-The output 
+The output is: 
+
+
+![series-without-index](./img/ingestion__df-series-no-index.png)
+
+
 
 but it can be changed using the index parameter.
 
 ```
 
+    s = {
+        "a": pd.Series(range(1, 3), index=["index1", "index2"]),
+        "b": pd.Series(range(2, 4), index=["index3", "index4"])
+    }
+    df = pd.DataFrame(s)
+
+
 ```
 
-- from [csv static file](./ingestion_data/dataframe_from_file.py)
+The output is: 
 
-``````
+![series-with-index](./img/ingestion__df-series-index.png)
 
-- from API
-    - Open [ingestion file](./ingestion_data/ingest.py)
 
+- Read Data from a local csv file ([code](./ingestion_data/dataframe_from_file.py))
+
+In most cases, we read data from a file with formats, such as: `json`, `csv`, `excel`, and `parquet`. In this part, we will read a local csv file with `read_csv` function. This function creates a DataFrame from a csv file.
+
+```
+
+    df = pd.read_csv("dataset/sample.csv", sep=",")
+    print("Print the first row")
+    print(df.head(1))
+
+```
+
+There are other parameters in `read_csv` function. We have the option to read only some of the columns from the csv file with `usecols`. The code below reads data on column `tpep_dropoff_datetime` only, from `dataset/sample.csv`.
+
+```
+
+    df = pd.read_csv("dataset/sample.csv", sep=",", header=0, usecols=["tpep_dropoff_datetime"])
+    print("only rad the tpep_dropoff_datetime column")
+    print(df.head())
+
+```
+
+- Read `json` data from API ([code](./ingestion_data/ingest.py))
+
+The `read_json` function can read a `json` file from a local file or a URL and convert them into a DataFrame. By default, `read_json` assumes that the `json` file contains a list of objects, where each object represents a row in the DataFrame.
+
+```
+
+    def __read_json_chunked(self) -> None:
+        """Read github data from web with read_json to pandas DataFrame"""
+        chunk_size = 50000
+        with pd.read_json(self.url, lines=True, chunksize=chunk_size, compression="gzip") as reader: 
+            for chunk in reader:
+                self.data = self.data.append(chunk, ignore_index=True)
+        print(self.data.head())
+
+```
+
+The `read_json` function 
 
 ### Indexing and Selecting data in a DataFrame
 
