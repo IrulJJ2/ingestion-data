@@ -8,6 +8,41 @@ print("Print the first row")
 print(df.head(1))
 print("--------------------")
 
+# indexing: selecting single column
+df_single_col = df["passenger_count"]
+print("Selecting single column")
+print(df_single_col)
+print("--------------------")
+
+# indexing: selecting multiple columns
+df_multiple_cols = df[["VendorID", "passenger_count", "trip_distance"]]
+print("Selecting multiple columns")
+print(df_multiple_cols)
+print("--------------------")
+
+# indexing: selecting a single row
+
+print("list of index: ", df.index)
+
+df_single_row = df.loc[0]
+print("Selecting a single row, index 0")
+print(df_single_row)
+print("--------------------")
+
+# indexing: selecting multiple rows
+
+df_multiple_rows = df.loc[:5] # equal to df.loc[[0,1,2,3,4,5]]
+print("Selecting multiple rows, index 0-5")
+print(df_multiple_rows)
+print("--------------------")
+
+# indexing: selecting multiple rows and columns
+
+df_multiple_rows_cols = df.loc[:5, ["VendorID", "passenger_count", "trip_distance"]]
+print("Selecting multiple rows and cols")
+print(df_multiple_rows_cols)
+print("--------------------")
+
 # example: read only 10 rows
 df = pd.read_csv("dataset/sample.csv", sep=",", nrows=10)
 print("only read 10 rows")

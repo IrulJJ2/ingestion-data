@@ -202,37 +202,103 @@ If the `json` data are quite large, we can utilize `chunksize` parameter to part
 
 ### Indexing and Selecting data in a DataFrame
 
-Indexing means selecting particular rows and columns from a DataFrame. There are several ways to do indexing with Pandas, some indexing methods are: 
+Indexing means selecting particular rows and columns from a DataFrame. The code can be found [here](./ingestion_data/dataframe_from_file.py). 
+
+There are several ways to do indexing with Pandas, some indexing methods are: 
+
+- DataFrame[]
+- DataFrame.loc[], DataFrame.iloc[], DataFrame.ix[]
 
 #### DataFrame[]
 
-this function also known as indexing operator
+This function also known as indexing operator.
+
+- Selecting single column
+
+```
+
+    df_single_col = df["passenger_count"]
+    print("Selecting single column")
+    print(df_single_col)
+    print("--------------------")
+
+```
+
+- Selecting multiple columns
+
+```
+
+    df_multiple_cols = df[["VendorID", "passenger_count", "trip_distance"]]
+    print("Selecting multiple columns")
+    print(df_multiple_cols)
+    print("--------------------")
+
+```
 
 #### DataFrame.loc[]
 
-this function is used for labels
+The differences between `.loc[]`, `.iloc[]` and `.ix[]` are: 
+- `.loc` function is used to select rows by labels
+- `.iloc` function is used for positions or integer based, and 
+- `.ix` function is used for both label and integer based
 
-- selecting a single column
-- selecting multiple columns
+To identify the index value use this command: `df.index`. 
 
-#### DataFrame.iloc[] 
+Let's see some examples of subset selection by rows and columns with indexing functions.
 
-this function is used for positions or integer based
+- Selecting a single row
 
-- selecting a single row
-- selecting multiple rows
-- selecting two rows and three columns
+To select a single row with `.loc[]`, put the row index inside brackets.
 
-#### DataFrame.ix[] 
+```
 
-this function is used for both label and integer based
+    df_single_row = df.loc[0]
+    print("Selecting a single row, index 0")
+    print(df_single_row)
+    print("--------------------")
 
-- selecting a single row
-- selecting multiple rows
-- selecting two rows and three columns
+```
+
+- Selecting multiple columns
+
+```
+    df_multiple_rows = df.loc[:5] # equal to df.loc[[0,1,2,3,4,5]]
+    print("Selecting multiple rows, index 0-5")
+    print(df_multiple_rows)
+    print("--------------------")
+```
+
+- Selecting a single row
+
+```
+
+    df_single_row = df.loc[0]
+    print("Selecting a single row, index 0")
+    print(df_single_row)
+    print("--------------------")
 
 
-https://www.geeksforgeeks.org/indexing-and-selecting-data-with-pandas/ 
+```
+
+- Selecting multiple rows
+
+```
+    df_multiple_rows = df.loc[:5] # equal to df.loc[[0,1,2,3,4,5]]
+    print("Selecting multiple rows, index 0-5")
+    print(df_multiple_rows)
+    print("--------------------")
+```
+
+- Selecting multiple rows and columns
+
+```
+
+    df_multiple_rows_cols = df.loc[:5, ["VendorID", "passenger_count", "trip_distance"]]
+    print("Selecting multiple rows and cols")
+    print(df_multiple_rows_cols)
+    print("--------------------")
+
+```
 
 ### Simple Ingestion Data to Postgresql
 
