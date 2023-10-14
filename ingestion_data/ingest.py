@@ -18,16 +18,10 @@ class Extraction():
         else:
             pass
         
-        self.display_data()
-        self.cast_data()
         self.investigate_schema()
+        self.cast_data()
 
         return self.dataframe
-    
-    def display_data(self) -> None:
-        # pandas truncates information
-        pd.set_option('display.max_columns', None)
-        print(self.dataframe.head(10))
 
     def __ext_checker(self) -> str:
         return self.path.split(".")[2]
@@ -84,7 +78,7 @@ class Extraction():
 
     def __read_json_chunked(self) -> None:
         """Read github data from web with read_json to pandas DataFrame"""
-        storage_options = {'User-Agent': None}
+        storage_options = {'User-Agent': 'pandas'}
 
         """
 
@@ -100,24 +94,30 @@ class Extraction():
         with pd.read_json(self.url, lines=True, storage_options=storage_options, chunksize=chunk_size, compression="gzip") as reader: 
             for chunk in reader:
                 self.dataframe = pd.concat([self.dataframe, chunk], ignore_index=True)
-        print(self.dataframe.head())
 
     def investigate_schema(self):
+        pd.set_option('display.max_columns', None)
+
+        # looking at DataFrame head data
+        print("df head data \n", self.dataframe.head())
+
         # looking at DataFrame schema 
-        print("df schema ", self.dataframe.info())
+        print("df info \n", self.dataframe.info())
 
         # checking is there any NaN value from `org` column
         org_nan_value = self.dataframe["org"].isnull().sum()
-        print("org_nan_value ", org_nan_value)
+        print("org_nan_value \n", org_nan_value)
 
         # checking is there any non-string value from from `type` column
         type_nan_value = self.dataframe["type"].isnull().sum()
-        print("type_nan_value ", type_nan_value)
+        print("type_nan_value \n", type_nan_value)
 
     def cast_data(self):
         self.dataframe["id"] = self.dataframe["id"].astype("Int64")
         self.dataframe["type"] = self.dataframe["type"].astype("string")
+        self.dataframe["public"] = self.dataframe["public"].astype("string")
         self.dataframe["created_at"] = pd.to_datetime(self.dataframe["created_at"])
+        print("another info >> ", self.dataframe.info())
     
 class Load():
     # https://www.geeksforgeeks.org/how-to-insert-a-pandas-dataframe-to-an-existing-postgresql-table/
@@ -147,7 +147,6 @@ class Load():
         self.__create_connection()
 
         try:
-            # TODO: manage schema for each dataset
             df_schema = {
                 "id": BigInteger,
                 "type": String(100),
@@ -167,8 +166,8 @@ def main():
     extract = Extraction()
 
     # read data from local file to dataframe
-    file_path = "./dataset/2017-10-02-1.json"
-    df_result = extract.local_file(file_path)
+    # file_path = "./dataset/2017-10-02-1.json"
+    # df_result = extract.local_file(file_path)
 
 
     # read data from github dataset to dataframe
@@ -177,9 +176,9 @@ def main():
     print("url: ", url)
     df_result = extract.request_api(url)
 
-    load = Load()
-    db_name = "json_data_concat"
-    load.to_postgres(db_name, df_result)
+    # load = Load()
+    # db_name = "json_data_concat"
+    # load.to_postgres(db_name, df_result)
 
 
 if __name__ == "__main__":

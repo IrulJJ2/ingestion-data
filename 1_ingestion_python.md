@@ -302,55 +302,69 @@ To select a single row with `.loc[]`, put the row index inside brackets.
 
 ### Simple Ingestion Data to Postgresql
 
-#### Identify data
+We are going to ingest data from available [datasets](./dataset/). 
 
-#### Extract data 
+We have already learned how to extract `csv` and `json` files [here](#create-a-dataframe). In this [code](./ingestion_data/ingest.py), the implementation of `read_csv` and `read_json` functions and parameters are quite custom depends on each characteristic of the data (number of rows, separator, etc).
 
-To extract `csv` and `json` data has already explained above.
+The other dataset is a `parquet` format file. Parquet file is a column-oriented data file format designed for efficient data storage and retrieval. It provides efficient data compression and encoding schemes with enhanced performance to handle complex data in bulk ([source](https://parquet.apache.org/docs/overview/motivation/)).
 
-Here we are going to extract data from a `parquet` file. 
-To extract `parquet` data: 
+To load `parquet` data into a DataFrame: 
 
 ```
     self.dataframe = pd.read_parquet(self.path, engine="pyarrow")
 ```
 
+The default io.parquet.engine behavior is to try 'pyarrow’, falling back to 'fastparquet’ if 'pyarrow' is unavailable. Therefore, we need to install additional library via: `pip install pyarrow`.
+
 #### Investigate data in a DataFrame
 
+The most used method for getting a quick overview of the DataFrame, is the head() method.
+
+The head() method returns the headers and a specified number of rows, starting from the top.
+
+Ple
+
 ```
-    def investigate_schema(self):
-        # looking at DataFrame schema 
-        print("df schema ", self.dataframe.info())
-
-        # checking is there any NaN value from `org` column
-        org_nan_value = self.dataframe["org"].isnull().sum()
-        print("org_nan_value ", org_nan_value)
-
-        # checking is there any non-string value from from `type` column
-        type_nan_value = self.dataframe["type"].isnull().sum()
-        print("type_nan_value ", type_nan_value)
+    # looking at DataFrame head data
+    print("df head data ", self.dataframe.head())
 
 ```
 
-
-#### Casting data based on appropriate data types
-
-https://pbpython.com/Pandas_dtypes.html
-
-Timestamp
-Int
-float/double
-Boolean
-string/varchar
-json object
-
-
+The DataFrames object has a method called info(), that gives you more information about the data set.
 
 ```
-    def cast_data(self):
-        self.dataframe["id"] = self.dataframe["id"].astype("Int64")
-        self.dataframe["type"] = self.dataframe["type"].astype("string")
-        self.dataframe["created_at"] = pd.to_datetime(self.dataframe["created_at"])
+    # looking at DataFrame schema 
+    print("df schema ", self.dataframe.info())
+
+```
+
+The result is: 
+
+![df-info](./img/ingestion__df-info.png)
+
+The info() method also tells us some informations: 
+- total rows
+- data type on each column. there are a column with boolean type, UTC datetime type, big integer type, and 5 columns with object type.
+- the number of `Non-Null` values present in each column.
+- column `org` has `Null` values and 26307 `Non-Null` values.
+
+`object` data type is also used for columns that have a mixed type or if the data type is not known. We can use method `.infer_objects().dtypes` to better infer data type for an object column.
+
+```
+    org_nan_value = self.dataframe["org"].isnull().sum()
+    print("org_nan_value ", org_nan_value)
+
+```
+
+
+#### Casting to appropriate Pandas data types
+
+This [docs](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) explains several data types in Pandas.
+
+Suppose we want to convert data type from boolean to string on column `public`, we can use this command
+
+```
+    self.dataframe["public"] = self.dataframe["public"].astype("string")
 ```
 
 #### Cleaning data, handle missing value, deal with NaN value 
