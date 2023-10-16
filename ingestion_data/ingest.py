@@ -39,20 +39,6 @@ class Extraction():
     def __read_parquet(self):
         self.dataframe = pd.read_parquet(self.path, engine="pyarrow")
 
-        """
-        Parquet library to use. If 'auto', then the option io.parquet.engine is used. 
-        The default io.parquet.engine behavior is to try 'pyarrow’, falling back to 'fastparquet’ if 'pyarrow' is unavailable.
-
-        When using the 'pyarrow' engine and no storage options are provided and a filesystem is implemented by both pyarrow.fs and fsspec (e.g. “s3://”), 
-        then the pyarrow.fs filesystem is attempted first. 
-
-        Use the filesystem keyword with an instantiated fsspec filesystem if you wish to use its implementation.
-
-        https://pandas.pydata.org/docs/reference/api/pandas.read_parquet.html
-
-        """
-
-
     def __read_csv(self) -> pd.DataFrame:
         """
         problem: DtypeWarning: Columns (6) have mixed types.Specify dtype option on import or set low_memory=False.
@@ -60,14 +46,11 @@ class Extraction():
 
         """
 
-        dtype = {
-            'first_name': str,
-            'last_name': str,
-            'date': str,
-            'salary': str
-        }
+        # dtype = {
+        # }
 
-        self.dataframe = pd.read_csv(self.path, dtype=dtype)
+        # self.dataframe = pd.read_csv(self.path, dtype=dtype)
+        self.dataframe = pd.read_csv(self.path)
 
     def request_api(self, url) -> pd.DataFrame:
         self.url = url
@@ -104,20 +87,29 @@ class Extraction():
         # looking at DataFrame schema 
         print("df info \n", self.dataframe.info())
 
-        # checking is there any NaN value from `org` column
-        org_nan_value = self.dataframe["org"].isnull().sum()
-        print("org_nan_value \n", org_nan_value)
+        if self.extension == "json":
+            # checking is there any NaN value from `org` column
+            org_nan_value = self.dataframe["org"].isnull().sum()
+            print("org_nan_value \n", org_nan_value)
 
-        # checking is there any non-string value from from `type` column
-        type_nan_value = self.dataframe["type"].isnull().sum()
-        print("type_nan_value \n", type_nan_value)
+            # checking is there any non-string value from from `type` column
+            type_nan_value = self.dataframe["type"].isnull().sum()
+            print("type_nan_value \n", type_nan_value)
+        else:
+            # file csv and parquet handler
+            pass
+    
+        
 
     def cast_data(self):
-        self.dataframe["id"] = self.dataframe["id"].astype("Int64")
-        self.dataframe["type"] = self.dataframe["type"].astype("string")
-        self.dataframe["public"] = self.dataframe["public"].astype("string")
-        self.dataframe["created_at"] = pd.to_datetime(self.dataframe["created_at"])
-        print("another info >> ", self.dataframe.info())
+        if self.extension == "json":
+            self.dataframe["id"] = self.dataframe["id"].astype("Int64")
+            self.dataframe["type"] = self.dataframe["type"].astype("string")
+            self.dataframe["public"] = self.dataframe["public"].astype("string")
+            self.dataframe["created_at"] = pd.to_datetime(self.dataframe["created_at"])
+        else:
+            # file csv and parquet cast data handler
+            pass
     
 class Load():
     # https://www.geeksforgeeks.org/how-to-insert-a-pandas-dataframe-to-an-existing-postgresql-table/
@@ -167,14 +159,15 @@ def main():
 
     # read data from local file to dataframe
     # file_path = "./dataset/2017-10-02-1.json"
-    # df_result = extract.local_file(file_path)
+    file_path = "./dataset/yellow_tripdata_2020-07.csv"
+    df_result = extract.local_file(file_path)
 
 
     # read data from github dataset to dataframe
-    year, month, day, hour = 2023, 10, 1, 1
-    url = f"http://data.gharchive.org/{year}-{month:02}-{day:02}-{hour}.json.gz"
-    print("url: ", url)
-    df_result = extract.request_api(url)
+    # year, month, day, hour = 2023, 10, 1, 1
+    # url = f"http://data.gharchive.org/{year}-{month:02}-{day:02}-{hour}.json.gz"
+    # print("url: ", url)
+    # df_result = extract.request_api(url)
 
     # load = Load()
     # db_name = "json_data_concat"
