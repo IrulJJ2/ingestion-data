@@ -333,7 +333,7 @@ Let's see some examples of subset selection by rows and columns with indexing fu
 In this part, before we are going to ingesting DataFrame to our data-warehouse, we have to do a simple data preprocessing including some following steps: 
 - Investigate data in a DataFrame
 - Casting to appropriate Pandas data types
-- Cleaning data, handle missing value, deal with NaN value
+- Cleaning Data with Pandas
 
 ### a. Investigate data in a DataFrame
 
@@ -374,30 +374,80 @@ When reading a file and loading it to a DataFrame, by default, pandas automatica
 Suppose we want to cast data type from `boolean` to `string` on column, we can use this command:
 
 ```
+    # `boolean` to `string`
     self.dataframe["public"] = self.dataframe["public"].astype("string")
+
+    # `object` to `datetime`
+    self.dataframe["tpep_pickup_datetime"] = pd.to_datetime(self.dataframe["tpep_pickup_datetime"])
+
 ```
 
-### c. Cleaning data, handle missing value, deal with NaN value 
+### c. Cleaning Data with Pandas 
 
+Cleaning data steps are fixing bad data in our DataFrame. Fixing bad data strategy can be various depending on our dataset and needs. 
+- If the DataFrame contains `Null` values, we have various solutions, such as: 
+    - remove the rows with `Null` values
 
+        ```
+
+        new_dataframe = self.dataframe.dropna()
+
+        ```
+        `dropna()` method returns new DataFrame, without changing the original one. If we want to replace the original DataFrame, add `inplace = True` parameter.
+
+        ```
+
+        self.dataframe.dropna(inplace=True)
+
+        ```
+
+    - replace the `Null` values with either 0, mean or median value
+
+        ```
+        new_dataframe = self.dataframe.fillna(0)
+        
+        # reflect change in-place
+        self.dataframe.fillna(0, inplace = True)
+
+        # replace data on specified column
+        self.dataframe["passenger_count"].fillna(0, inplace = True)
+
+        ```
+
+    - let the `Null` values be
+
+- The Date column contains wrong format
+    ```
+    TBD
+    ```
+
+- The Flag column contains value `Y` and `N` instead of `True` and `False` as Boolean. The solutions would be: 
+    ```
+    TBD
+    ```
 
 ### d. Load DataFrame to Postgresql
 
-Here is the code 
+- Here is the code to load DataFrame to Postgresql. First of all, we need to establish connection to Postgresql with `sqlalchemy` library.
+
+    ```
+        def __create_connection(self):
+            from sqlalchemy import create_engine 
+
+            user = "postgres"
+            password = "admin"
+            host = "localhost"
+            database = "mydb"
+            port = 5432
+            conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+            self.engine = create_engine(conn_string) 
+
+    ```
+
+- Then, use the connection to load DataFrame to Postgresql with `to_sql` method. In the `to_sql` method, we specify data schema of DataFrame, so that the Postgresql will create table based on the defined schema in `dtype` argument.
 
 ```
-    def __create_connection(self):
-        from sqlalchemy import create_engine 
-
-        user = "postgres"
-        password = "admin"
-        host = "localhost"
-        database = "mydb"
-        port = 5432
-        conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-
-        self.engine = create_engine(conn_string) 
-
     def to_postgres(self, db_name: str, data: pd.DataFrame):
         from sqlalchemy.types import BigInteger, String, JSON, DateTime, Boolean
         from sqlalchemy.exc import SQLAlchemyError
@@ -438,7 +488,9 @@ Here is the code
 
 ## 4. Task
 
-1. Now, we are going to create a DataFrame from a [parquet file](./dataset/yellow_tripdata_2023-01.parquet) on our [datasets](./dataset/).
+1. We are going to create a DataFrame from a [parquet file](./dataset/yellow_tripdata_2023-01.parquet) on our [datasets](./dataset/).
 2. Load the parquet file to a DataFrame with `fastparquet` library.
-3. Ingest and set an appropriate data type for [Yellow Trip dataset](./dataset/yellow_tripdata_2023-01.parquet) to PostgreSQL.
-4. Then count how many rows are ingested.
+3. Set an appropriate data type for [Yellow Trip dataset](./dataset/yellow_tripdata_2023-01.parquet).
+4. Clean data for Yellow Trip dataset
+5. Ingest data to PostgreSQL
+6. Then count how many rows are ingested
