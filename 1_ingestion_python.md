@@ -365,65 +365,66 @@ The info() method also tells us some information, such as:
 
 The `object` data type is used for columns that have a mixed type or if the data type is not known. We can use method `.infer_objects().dtypes` to better infer data type for an object data type.
 
-### b. Casting to appropriate Pandas data types
-
-This [docs](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) explains several data types available in Pandas.
-
-When reading a file and loading it to a DataFrame, by default, pandas automatically infers and assigns the data type of each column based on the data it contains. If there is a column that have a mixed type (the rows contain integer and `null` values), pandas will infer the data type it as an `object`.
-
-Suppose we want to cast data type from `boolean` to `string` on column, we can use this command:
-
-```
-    # `boolean` to `string`
-    self.dataframe["public"] = self.dataframe["public"].astype("string")
-
-    # `object` to `datetime`
-    self.dataframe["tpep_pickup_datetime"] = pd.to_datetime(self.dataframe["tpep_pickup_datetime"])
-
-```
-
-### c. Cleaning Data with Pandas 
+### b. Cleaning Data with Pandas 
 
 Cleaning data steps are fixing bad data in our DataFrame. Fixing bad data strategy can be various depending on our dataset and needs. 
+
+When reading a file and loading it to a DataFrame, by default, pandas automatically infers and assigns the data type of each column based on the data it contains.
+Suppose we are going to clean the [yellow_tripdata dataset](./dataset/yellow_tripdata_2020-07.csv). Let's see the initial data type infered by Pandas.
+
+![yellow-tripdata-initial-data-type](./img/ingestion__yellow-taxi-data-type.png)
+
+To decide the appropriate data type for each column, we have to look through the dataset and understand the context of the dataset. A column that have a mixed type (the rows contain integer and `null` values), pandas will infer the data type it as an `object`.
+
+#### 1) Casting to appropriate Pandas data types
+
+We have column `passenger_count` with data type `float64`. The number of passenger should not be a floating number, it must be an integer value. Use the code below to cast data type for `passenger_count` on  from `float64` to `Int8`
+
+```
+    self.dataframe["passenger_count"] = self.dataframe["passenger_count"].astype("Int8")
+
+```
+Then, to cast column from `object` to `datetime`, we can use this command:
+
+```
+    # `object` to `datetime`
+    self.dataframe["tpep_pickup_datetime"] = pd.to_datetime(self.dataframe["tpep_pickup_datetime"])
+    self.dataframe["tpep_dropoff_datetime"] = pd.to_datetime(self.dataframe["tpep_dropoff_datetime"])
+
+```
+
+#### 2) Managing `Null` values
 - If the DataFrame contains `Null` values, we have various solutions, such as: 
     - remove the rows with `Null` values
 
         ```
-
-        new_dataframe = self.dataframe.dropna()
-
+            new_dataframe = self.dataframe.dropna()
         ```
         `dropna()` method returns new DataFrame, without changing the original one. If we want to replace the original DataFrame, add `inplace = True` parameter.
 
         ```
-
-        self.dataframe.dropna(inplace=True)
-
+            self.dataframe.dropna(inplace=True)
         ```
 
     - replace the `Null` values with either 0, mean or median value
 
         ```
-        new_dataframe = self.dataframe.fillna(0)
-        
-        # reflect change in-place
-        self.dataframe.fillna(0, inplace = True)
+            new_dataframe = self.dataframe.fillna(0)
+            
+            # reflect in-place change
+            self.dataframe.fillna(0, inplace = True)
 
-        # replace data on specified column
-        self.dataframe["passenger_count"].fillna(0, inplace = True)
-
+            # fill null data on specified column
+            self.dataframe["passenger_count"].fillna(0, inplace = True)
         ```
 
-    - let the `Null` values be
+    - let the `Null` values be `Null`
 
-- The Date column contains wrong format
+#### 3) Manage boolean-like Value with Boolean value
+- The `store_and_fwd_flag` column contains value `Y`, `N` and `Null` instead of `True` and `False` as Boolean. Therefore we need to replace flag with boolean value and cast the data type to boolean. The code would be: 
     ```
-    TBD
-    ```
-
-- The Flag column contains value `Y` and `N` instead of `True` and `False` as Boolean. The solutions would be: 
-    ```
-    TBD
+        self.dataframe["store_and_fwd_flag"] = self.dataframe["store_and_fwd_flag"].replace(["N", "Y"], [False, True])
+        self.dataframe["store_and_fwd_flag"] = self.dataframe["store_and_fwd_flag"].astype("boolean")
     ```
 
 ### d. Load DataFrame to Postgresql
@@ -445,7 +446,7 @@ Cleaning data steps are fixing bad data in our DataFrame. Fixing bad data strate
 
     ```
 
-- Then, use the connection to load DataFrame to Postgresql with `to_sql` method. In the `to_sql` method, we specify data schema of DataFrame, so that the Postgresql will create table based on the defined schema in `dtype` argument.
+- Then, use the connection to load DataFrame to Postgresql with `to_sql` method. In the `to_sql` method, we specify data schema of DataFrame, so that the Postgresql will create table based on the defined schema in `dtype` argument. In the code below, we use the schema for [github dataset](./dataset/2017-10-02-1.json).
 
 ```
     def to_postgres(self, db_name: str, data: pd.DataFrame):
@@ -490,7 +491,7 @@ Cleaning data steps are fixing bad data in our DataFrame. Fixing bad data strate
 
 1. We are going to create a DataFrame from a [parquet file](./dataset/yellow_tripdata_2023-01.parquet) on our [datasets](./dataset/).
 2. Load the parquet file to a DataFrame with `fastparquet` library.
-3. Set an appropriate data type for [Yellow Trip dataset](./dataset/yellow_tripdata_2023-01.parquet).
-4. Clean data for Yellow Trip dataset
-5. Ingest data to PostgreSQL
-6. Then count how many rows are ingested
+3. Clean the Yellow Trip dataset.
+4. Define the data type schema when using `to_sql` method.
+5. Ingest the Yellow Trip dataset to PostgreSQL
+6. Count how many rows are ingested.

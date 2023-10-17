@@ -20,6 +20,8 @@ class Extraction():
         
         self.investigate_schema()
         self.cast_data()
+        self.investigate_schema()
+
 
         return self.dataframe
 
@@ -97,7 +99,8 @@ class Extraction():
             print("type_nan_value \n", type_nan_value)
         else:
             # file csv and parquet handler
-            pass
+
+            print(self.dataframe["store_and_fwd_flag"])
     
         
 
@@ -109,7 +112,14 @@ class Extraction():
             self.dataframe["created_at"] = pd.to_datetime(self.dataframe["created_at"])
         else:
             # file csv and parquet cast data handler
-            pass
+            self.dataframe["passenger_count"] = self.dataframe["passenger_count"].astype("Int8")
+            
+            self.dataframe["store_and_fwd_flag"] = self.dataframe["store_and_fwd_flag"].replace(["N", "Y"], [False, True])
+            self.dataframe["store_and_fwd_flag"] = self.dataframe["store_and_fwd_flag"].astype("boolean")
+            
+            self.dataframe["tpep_pickup_datetime"] = pd.to_datetime(self.dataframe["tpep_pickup_datetime"])
+            self.dataframe["tpep_dropoff_datetime"] = pd.to_datetime(self.dataframe["tpep_dropoff_datetime"])
+            # pass
     
 class Load():
     # https://www.geeksforgeeks.org/how-to-insert-a-pandas-dataframe-to-an-existing-postgresql-table/
