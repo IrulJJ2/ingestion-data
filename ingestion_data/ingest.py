@@ -169,19 +169,19 @@ def main():
 
     # read data from local file to dataframe
     # file_path = "./dataset/2017-10-02-1.json"
-    file_path = "./dataset/yellow_tripdata_2020-07.csv"
-    df_result = extract.local_file(file_path)
+    # file_path = "./dataset/yellow_tripdata_2020-07.csv"
+    # df_result = extract.local_file(file_path)
 
 
     # read data from github dataset to dataframe
-    # year, month, day, hour = 2023, 10, 1, 1
-    # url = f"http://data.gharchive.org/{year}-{month:02}-{day:02}-{hour}.json.gz"
-    # print("url: ", url)
-    # df_result = extract.request_api(url)
+    year, month, day, hour = 2023, 10, 1, 1
+    url = f"http://data.gharchive.org/{year}-{month:02}-{day:02}-{hour}.json.gz"
+    print("url: ", url)
+    df_result = extract.request_api(url)
 
-    # load = Load()
-    # db_name = "json_data_concat"
-    # load.to_postgres(db_name, df_result)
+    load = Load()
+    db_name = "github_data"
+    load.to_postgres(db_name, df_result)
 
 
 if __name__ == "__main__":
