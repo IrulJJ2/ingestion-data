@@ -9,28 +9,15 @@ class Extraction():
     def local_file(self, path: str):
         self.path = path
         self.extension = self.__ext_checker()
-
-        if self.extension == "csv":
-            self.__read_csv()
-        elif self.extension == "parquet":
-            self.__read_parquet()
-        else:
-            pass
-        
+        self.__read_csv()
         self.investigate_schema()
         self.cast_data()
 
         return self.dataframe
     
-
     def __ext_checker(self) -> str:
         return self.path.split(".")[-1]
     
-
-    def __read_parquet(self):
-        self.dataframe = pd.read_parquet(self.path, engine="pyarrow")
-
-
     def __read_csv(self) -> pd.DataFrame:
         """
         problem: DtypeWarning: Columns (6) have mixed types.Specify dtype option on import or set low_memory=False.
@@ -39,13 +26,11 @@ class Extraction():
         """
         self.dataframe = pd.read_csv(self.path)
 
-
     def investigate_schema(self):
         pd.set_option('display.max_columns', None)
 
         print(self.dataframe["store_and_fwd_flag"])
     
-
     def cast_data(self):
         # file csv and parquet cast data handler
         self.dataframe["passenger_count"] = self.dataframe["passenger_count"].astype("Int8")
@@ -55,6 +40,7 @@ class Extraction():
         
         self.dataframe["tpep_pickup_datetime"] = pd.to_datetime(self.dataframe["tpep_pickup_datetime"])
         self.dataframe["tpep_dropoff_datetime"] = pd.to_datetime(self.dataframe["tpep_dropoff_datetime"])
+    
     
 class Load():
     # https://www.geeksforgeeks.org/how-to-insert-a-pandas-dataframe-to-an-existing-postgresql-table/
