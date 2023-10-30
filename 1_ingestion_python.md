@@ -31,20 +31,13 @@ Material:
 - install python3.10 virtual environment locally
 
 ```
-    virtualenv -p python3.10 env
+    virtualenv -p python3.10 venv
 ```
-
 - activate virtual environment and check python version
 
 ```
-    source ./env/bin/activate
+    source venv/bin/activate
     python --version
-```
-
-- deactivate our virtual environment
-
-```
-    deactivate
 ```
 
 ## 2. Install Python libraries 
@@ -58,13 +51,18 @@ Material:
 
 ## 3. Run postgresql service with docker-compose
 
-To run Postgres with docker-compose we will create a [docker-compose-pg-only.yml](./ingestion_data/docker-compose-pg-only.yml).
+To run Postgres with docker-compose we will create a [docker-compose-pg-only.yml](/docker-compose-pg-only.yml).
 
 To start the containers, run this command: 
 
 ```
-    docker-compose -f ingestion_data/docker-compose-pg-only.yml up postgresql
+    cd ingestion_data
 ```
+
+```
+    docker-compose -f docker-compose-pg-only.yml up postgresql -d 
+```
+
 
 ## 4. Manage postgresql with DBeaver
 
