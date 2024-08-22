@@ -329,7 +329,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME:-postgre}"
     image: "postgres:12.16"
     ports:
-      - "5432:5432"
+      - "5439:5432"
     labels:
       - "com.citusdata.role=Master"
     environment: &AUTH
